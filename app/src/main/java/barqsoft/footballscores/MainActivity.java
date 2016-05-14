@@ -1,7 +1,14 @@
 package barqsoft.footballscores;
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -14,10 +21,19 @@ public class MainActivity extends ActionBarActivity
     public static String LOG_TAG = "MainActivity";
     private final String save_tag = "Save Test";
     private PagerFragment my_main;
+    public static final int MY_PERMISSIONS_REQUEST_INTERNET = 1;
+    public static boolean internetPermissionGranted = false;
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //no changes
+        checkInternetPermission();
+
         Log.d(LOG_TAG, "Reached MainActivity onCreate");
         if (savedInstanceState == null) {
             my_main = new PagerFragment();
@@ -27,6 +43,49 @@ public class MainActivity extends ActionBarActivity
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
+    public void checkInternetPermission(){
+
+        Log.d(LOG_TAG, "Checking Permissions...");
+        //Although Manifest.permissions.INTERNET is not a sensitive one, I've left this in here
+        //because I had issues loading onto my Pixel C... This was due to the lint filter in the
+        //android manifest hitting TargetAPI of 22.
+        //Since this doesnt hurt, ill leave it in.
+        ///fyi, works well, Tested on WRITE_CONTACTS
+
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET);
+        if(permissionCheck == PackageManager.PERMISSION_GRANTED){
+            Log.v(LOG_TAG, "Internet permission allowed");
+        } else {
+            if(shouldShowRequestPermissionRationale(Manifest.permission.INTERNET)){
+                Log.d(LOG_TAG, "Request should be shown");
+            } else {
+                Log.d(LOG_TAG, "Requesting permission");
+                requestPermissions(
+                        new String[]{Manifest.permission.INTERNET},
+                        MY_PERMISSIONS_REQUEST_INTERNET
+                        );
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d(LOG_TAG, "Responding to permission request");
+        switch (requestCode){
+            case MY_PERMISSIONS_REQUEST_INTERNET:
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    internetPermissionGranted = true;
+                    Log.d(LOG_TAG, "Internet permission granted by user.");
+                } else {
+                    Log.d(LOG_TAG, "Internet permission denied by user.");
+                }
+                break;
+            default:
+                Log.e(LOG_TAG, "Permission request not recognised");
+                break;
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
